@@ -97,10 +97,22 @@ flights %>%
 #Which flights (i.e. carrier + flight) happen every day? Where do they fly to?
 flights %>%
   group_by(carrier, flight, dest) %>%
-  summarise(arr_delay = mean(arr_delay, na.rm = TRUE),
-            n = n()) %>%
-  arrange(desc(arr_delay))
-
-
+  summarise(n = n()) %>%
+  arrange(desc(n)) %>%
+  filter(n == 365)
+  
 #On average, how do delays (of non-cancelled flights) vary over the course of a day?
+delays_by_hour <- flights %>%
+  filter(cancelled == 0) %>%
+  mutate(time = hour + minute / 60) %>%
+  group_by(time) %>%
+  summarise(arr_delay = mean(arr_delay, na.rm = TRUE),
+            n = n())
 
+qplot(time, arr_delay, data = delays_by_hour)
+qplot(time, arr_delay, data = delays_by_hour, size = n) + scale_size_area()
+qplot(time, arr_delay, data = filter(delays_by_hour, n > 30), size = n) + scale_size_area()
+
+ggplot(filter(per_hour, n > 30), aes(time, arr_delay)) +
+  geom_vline(xintercept = 5:24, colour = "white", size = 2) +
+  geom_point()
