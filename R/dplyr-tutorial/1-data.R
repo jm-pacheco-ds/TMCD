@@ -113,6 +113,6 @@ qplot(time, arr_delay, data = delays_by_hour)
 qplot(time, arr_delay, data = delays_by_hour, size = n) + scale_size_area()
 qplot(time, arr_delay, data = filter(delays_by_hour, n > 30), size = n) + scale_size_area()
 
-ggplot(filter(per_hour, n > 30), aes(time, arr_delay)) +
+ggplot(filter(delays_by_hour, n > 30), aes(time, arr_delay)) +
   geom_vline(xintercept = 5:24, colour = "white", size = 2) +
   geom_point()
