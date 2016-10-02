@@ -116,3 +116,107 @@ qplot(time, arr_delay, data = filter(delays_by_hour, n > 30), size = n) + scale_
 ggplot(filter(delays_by_hour, n > 30), aes(time, arr_delay)) +
   geom_vline(xintercept = 5:24, colour = "white", size = 2) +
   geom_point()
+
+#Grouped mutate/filter
+
+planes <- flights %>%
+  filter(!is.na(arr_delay)) %>%
+  group_by(plane) %>%
+  filter(n() > 30)
+
+planes %>%
+  mutate(z_delay =
+           (arr_delay - mean(arr_delay)) / sd(arr_delay)) %>%
+  filter(z_delay > 5)
+
+planes %>% filter(min_rank(arr_delay) < 5)
+
+
+
+flights %>% group_by(plane) %>%
+  filter(row_number(desc(arr_delay)) <= 2)
+
+flights %>% group_by(plane) %>%
+  filter(min_rank(desc(arr_delay)) <= 2)
+
+flights %>% group_by(plane) %>%
+  filter(dense_rank(desc(arr_delay)) <= 2)
+
+
+daily <- flights %>%
+  group_by(date) %>%
+  summarise(delay = mean(dep_delay, na.rm = TRUE))
+
+daily %>% mutate(lag(delay), delay - lag(delay))
+
+daily %>% mutate(lag(delay), delay - lag(delay), order_by = date)
+
+##Two table verbs
+location <- airports %>%
+  select(dest = iata, name = airport, lat, long)
+
+flights %>%
+  group_by(dest) %>%
+  filter(!is.na(arr_delay)) %>%
+  summarise(
+    arr_delay = mean(arr_delay),
+    n = n()
+  ) %>%
+  arrange(desc(arr_delay)) %>%
+  left_join(location)
+
+
+x <- data.frame(
+  name = c("John", "Paul", "George", "Ringo", "Stuart", "Pete"),
+  instrument = c("guitar", "bass", "guitar", "drums", "bass",
+                 "drums")
+)
+
+y <- data.frame(
+  name = c("John", "Paul", "George", "Ringo", "Brian"),
+  band = c("TRUE", "TRUE", "TRUE", "TRUE", "FALSE")
+)
+
+hourly_delay <- flights %>%
+  group_by(date, hour) %>%
+  filter(!is.na(dep_delay)) %>%
+  summarise(
+    delay = mean(dep_delay),
+    n = n()
+  ) %>%
+  filter(n > 10)
+delay_weather <- hourly_delay %>% left_join(weather)
+
+#What weather conditions are associated with delays leaving houston
+qplot(temp, delay, data = delay_weather)
+qplot(wind_speed, delay, data = delay_weather)
+qplot(gust_speed, delay, data = delay_weather)
+qplot(is.na(gust_speed), delay, data = delay_weather,
+      geom = "boxplot")
+qplot(conditions, delay, data = delay_weather,
+      geom = "boxplot")
+qplot(events, delay, data = delay_weather,
+      geom = "boxplot")
+
+
+## DO
+library(dplyr)
+library(zoo)
+df <- data.frame(
+  houseID = rep(1:10, each = 10),
+  year = 1995:2004,
+  price = ifelse(runif(10 * 10) > 0.50, NA, exp(rnorm(10 * 10)))
+)
+
+df %>%
+  group_by(houseID) %>%
+  do(na.locf(.))
+
+df %>%
+  group_by(houseID) %>%
+  do(head(., 2))
+
+df %>%
+  group_by(houseID) %>%
+  do(data.frame(year = .$year[1]))
+
